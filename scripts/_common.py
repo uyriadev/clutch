@@ -56,6 +56,10 @@ def parse_frontmatter(text):
     merely starts with a horizontal rule is never mangled.
     """
     meta = {}
+    # Strip a UTF-8 BOM first. PowerShell's `Set-Content -Encoding utf8` writes one,
+    # and U+FEFF is not whitespace, so str.strip() leaves it on line 0 and the
+    # frontmatter silently stops parsing - the file just loses all its metadata.
+    text = text.lstrip("﻿")
     lines = text.splitlines()
     if not lines or lines[0].strip() != "---":
         return meta, text

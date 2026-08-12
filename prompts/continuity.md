@@ -1,4 +1,4 @@
-﻿---
+---
 title: Continuity - one session, one continuous project
 tags: [session, naming, additive, threads, context-loss]
 modes: [core]

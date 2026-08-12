@@ -8,3 +8,4 @@
 | [git rev-parse echoes bad refs to stdout](git-rev-parse-echoes-bad-refs.md) | git, python | clutch | 2026-07-28 |
 | [Gradle "Unable to establish loopback connection" on Windows - launch the daemon on JDK 8](gradle-jdk8-launcher-uds-loopback-windows.md) | gradle, java, windows, jvm, sockets | blanket | 2026-07-29 |
 | [mermaid-cli / Puppeteer fails to launch on Windows - use system Chrome](mermaid-cli-headless-shell-launch-fails-windows.md) | mermaid, puppeteer, nodejs, windows, chrome | clutch | 2026-08-01 |
+| [PowerShell Set-Content -Encoding utf8 writes a BOM that silently kills frontmatter parsing](powershell-utf8-bom-breaks-frontmatter.md) | powershell, windows, encoding, bom, utf8, frontmatter, yaml | clutch | 2026-08-12 |
