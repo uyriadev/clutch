@@ -1,0 +1,15 @@
+# JavaScript/TypeScript Unit Testing - Jest & Vitest
+
+1. **Principles first** (see testing-principles.md); these are the Jest/Vitest mechanics. Check which runner the project uses - the APIs are near-twins (`vi.*` vs `jest.*`) but config, module handling (ESM!), and mock hoisting differ. Match the installed one.
+2. **Async correctness is rule zero:** always `await` async assertions - a missing `await` on `expect(promise).rejects.toThrow()` passes vacuously. Async tests return/await their promises; `expect.assertions(n)` when asserting inside callbacks/catches.
+3. **Rejection assertions the right way:** `await expect(fn()).rejects.toThrow(SpecificError)` - try/catch-with-assert-in-catch silently passes when nothing throws (unless paired with `expect.assertions`).
+4. **Mock modules sparingly and at boundaries:** `vi.mock`/`jest.mock` calls are hoisted - factory functions can't touch outer variables (use `vi.hoisted` in Vitest). Prefer injecting dependencies over module-mocking your own code; module mocks are for SDKs and IO edges.
+5. **Mock hygiene between tests:** `clearAllMocks`/`restoreAllMocks` in setup (or config `restoreMocks: true`) - mock state leaking across tests creates order-dependent flakiness. `spyOn` + `mockRestore` over reassigning globals.
+6. **Fake timers deliberately:** `vi.useFakeTimers()` + `advanceTimersByTime`/`runAllTimers` for debounce/retry/scheduling logic - and restore real timers after. Mixing fake timers with real async needs `advanceTimersByTimeAsync`/flushed microtasks - the classic hang.
+7. **Time and randomness injected or frozen:** `vi.setSystemTime` for date logic; seed or stub `Math.random`. A test that fails at midnight UTC on the 31st is a real category.
+8. **Parameterize repetitive cases:** `test.each` / `it.each` tables over copy-pasted tests - the table documents the contract's edges in one view.
+9. **Matchers that say what you mean:** `toEqual` (structural) vs `toBe` (reference), `toStrictEqual` for shape strictness, `toMatchObject`/`objectContaining` for partial contracts, `toContainEqual` for arrays of objects; number closeness via `toBeCloseTo` - never float `toBe`.
+10. **Snapshots are for stable serialized output only** (small, reviewed, inline-preferred) - not for whole component trees or API payloads that churn; a 400-line snapshot nobody reads is `--updateSnapshot` theater, delete it for explicit assertions.
+11. **Component tests via Testing Library discipline:** query by role/label (`getByRole('button', { name: /save/i })`) - not test IDs first, never CSS selectors; `userEvent` over `fireEvent`; `findBy*`/`waitFor` for async UI - no manual sleeps; assert what the user sees, not component internals/props.
+12. **MSW (or the project's HTTP-mock layer) for network in integration-ish tests** - intercepting at the network boundary beats mocking fetch/axios internals; and no test hits real networks or real time-dependent services in CI.
+13. **Keep the suite fast and isolated:** unit configs run in parallel workers - no shared files/ports/globals across tests; heavy setup in `beforeAll` only when immutable; `test.concurrent` only for genuinely independent async tests.

@@ -1,0 +1,13 @@
+# Nuxt 3/4
+
+1. **Vue rules apply first** (see vue.md); Nuxt adds SSR, conventions, and a server side - most Nuxt-specific bugs are SSR bugs.
+2. **Data fetching: `useFetch`/`useAsyncData` for component data** (SSR-aware, deduped, hydration-transferred); `$fetch` alone only inside event handlers and server code - calling raw `$fetch` in setup double-fetches (server and client). Unique keys for `useAsyncData` when the URL doesn't imply one.
+3. **SSR safety:** no `window`/`document`/`localStorage` in setup - guard with `import.meta.client`, `onMounted`, or `<ClientOnly>` for genuinely client-only widgets. State must serialize across hydration; mismatched server/client render output is a hydration warning you must fix, not silence.
+4. **`useState` for SSR-safe shared state** (never a module-level `ref` - that leaks between requests on the server); Pinia for anything structured. Per-request state on the server side lives in `event.context`.
+5. **Use the directory conventions - that's the framework:** `pages/` (file-based routing), `layouts/`, `middleware/`, `composables/` and `components/` (auto-imported), `server/api/` (server routes), `plugins/`. Don't hand-register what Nuxt auto-wires; do check `nuxt.config.ts` for customized behavior first.
+6. **Server routes (`server/api/*.ts` with `defineEventHandler`) are the backend:** validate input (`readValidatedBody`/zod), check auth per handler, return typed data - `useFetch('/api/x')` picks up the types end-to-end. Secrets live in `runtimeConfig` (server keys) - only `runtimeConfig.public` reaches the client.
+7. **Routing via helpers:** `navigateTo()` (not `router.push` in middleware/server contexts), `definePageMeta` for layout/middleware/auth per page, route middleware for guards - and remember middleware runs on both server and client unless told otherwise.
+8. **SEO with the built-ins:** `useSeoMeta`/`useHead` per page, `NuxtImg`/`NuxtPicture` (via @nuxt/image) for images, `NuxtLink` for navigation (prefetching).
+9. **Error handling the Nuxt way:** `createError({ statusCode, statusMessage })` in server routes and pages (triggers error page), `error.vue` at the root for the global error boundary, `<NuxtErrorBoundary>` for component-level containment.
+10. **Nitro is the deploy target:** know the preset (node, vercel, cloudflare...) - edge presets restrict Node APIs in `server/`. Cache with `routeRules` (`swr`, `prerender`, `isr`) declaratively before writing custom cache code.
+11. **Check the Nuxt major/minor:** Nuxt 4 changed the default `app/` directory structure and data-fetching defaults; auto-import behavior and module APIs shift between minors. The installed version and `nuxt.config.ts` win over memory.

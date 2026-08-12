@@ -1,0 +1,15 @@
+# Flutter
+
+1. **Dart rules apply first** (see dart.md) - null safety, `final`, futures never dropped. Flutter adds the widget tree, state management, and platform channels.
+2. **`const` constructors everywhere possible** - `const SizedBox(height: 8)`, const widget subtrees. It's Flutter's cheapest rebuild optimization and the lint (`prefer_const_constructors`) enforces it; keep the analyzer clean.
+3. **Composition over configuration monoliths:** extract widget classes (not helper methods returning widgets - classes get their own element/rebuild scope and const-ability). A 400-line `build` method is a decomposition failure.
+4. **`build()` is pure and cheap:** no allocation-heavy work, no network calls, no `MediaQuery`-independent recomputation - it runs on every rebuild. Expensive derivations are cached in state or computed by the state layer.
+5. **Match the project's state management (Riverpod, Bloc, Provider, signals - check pubspec) and use it idiomatically:** ephemeral widget state in `StatefulWidget`; shared/app state in the chosen layer; never global mutable singletons. Don't introduce a second state solution.
+6. **`setState` scope is rebuild scope:** call it low in the tree, on the smallest stateful widget that owns the change; lift state only as high as sharing requires. Rebuild storms from top-level setState are the classic Flutter jank.
+7. **Dispose what you create:** controllers (animation, text, scroll, page), focus nodes, stream subscriptions, timers - paired in `dispose()`. And check `mounted` before `setState` after any await.
+8. **Lists are builders:** `ListView.builder`/`GridView.builder`/slivers for anything unbounded - never `ListView(children: hugeList.map(...))`. `itemExtent`/prototypes when heights are fixed; keys on reorderable items.
+9. **Layout constraints are the mental model** ("constraints go down, sizes go up"): fix overflow errors by understanding the constraint (Expanded/Flexible in rows/columns, LayoutBuilder for adaptive) - not by wrapping things in random SingleChildScrollViews until the error stops.
+10. **Async UI states are explicit:** `FutureBuilder`/`StreamBuilder` (or the state layer's AsyncValue) render loading, error, and data - all three. Futures created in `build` re-fire on rebuild; create them in `initState` or the state layer.
+11. **Platform integration deliberately:** method channels/pigeon (or existing plugins - prefer them) with both platform implementations, graceful degradation when a capability is missing; `Theme.of(context)`/Material-Cupertino adaptivity per the app's design language.
+12. **Performance verified, not assumed:** DevTools timeline for jank, `RepaintBoundary` where profiling shows repaint spread, image caching/sizing (`cacheWidth`), isolates (`compute`) for parsing - and profile-mode on a real device, debug-mode numbers are fiction.
+13. **Tests in the Flutter shape:** unit tests for logic, widget tests (`pumpWidget`, `tester.tap`, `pumpAndSettle`) for components, golden tests where the team maintains them, integration_test for critical flows.

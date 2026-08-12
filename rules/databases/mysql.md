@@ -1,0 +1,14 @@
+# MySQL / MariaDB
+
+1. **SQL rules apply first** (see ../languages/sql.md). MySQL specifics - and its permissive defaults - below.
+2. **Verify the flavor and version first:** MySQL 5.7 vs 8.x vs MariaDB differ on window functions, CTEs, CHECK enforcement (ignored before 8.0.16!), utf8mb4 defaults, and JSON features. The deployed version wins over memory.
+3. **InnoDB, utf8mb4, and strict mode are the baseline:** no new MyISAM tables (no transactions, table locks, no crash safety); `utf8mb4` always (`utf8` is a 3-byte lie that rejects emoji); `sql_mode` strict (`STRICT_TRANS_TABLES,...`) - permissive mode silently truncates strings and zero-fills bad dates instead of erroring.
+4. **Primary keys are the physical layout:** InnoDB clusters by PK - every secondary index carries the PK, so PKs stay compact (auto-increment int/bigint typical; random UUIDv4 PKs fragment - use UUIDv7/ordered or keep the UUID as a unique secondary). Every table has an explicit PK, no exceptions.
+5. **Index to the query, leftmost-prefix rule in mind:** composite `(a, b, c)` serves `a`, `a,b`, `a,b,c` - not `b,c`; functions on columns kill index use (8.0+: functional indexes exist); confirm with `EXPLAIN`/`EXPLAIN ANALYZE` (8.0.18+), watch for `filesort`/`temporary` on hot queries.
+6. **Know your isolation reality:** InnoDB defaults to REPEATABLE READ with gap locking - insert-heavy workloads meet deadlocks here; retry deadlocked transactions (they're normal, not bugs) and keep transactions short and consistently ordered. READ COMMITTED is a legitimate choice - decide, don't drift.
+7. **Upserts: `INSERT ... ON DUPLICATE KEY UPDATE`** (mind: it fires on *any* unique key collision, and burns auto-increment values); `INSERT IGNORE` swallows more errors than duplicates - avoid it.
+8. **Online DDL with care:** `ALTER TABLE ... ALGORITHM=INPLACE, LOCK=NONE` where supported - verify per-operation support for your version; big-table migrations via gh-ost/pt-online-schema-change in serious deployments. Test migration lock behavior before production.
+9. **Charset/collation coherence:** mixed collations break index use on joins and produce "illegal mix of collations" at the worst time - standardize (`utf8mb4_0900_ai_ci` on 8.x) across tables, columns, and connections.
+10. **The permissive-history traps:** implicit type coercion in comparisons (`WHERE str_col = 0` matches everything non-numeric), zero-dates, silent group-by (pre-`ONLY_FULL_GROUP_BY`) - strict mode + explicit casts + modern sql_mode close these; don't reopen them.
+11. **Pooling and limits:** connection pool sized to `max_connections` reality; `innodb_buffer_pool_size` is the tuning knob that matters most; slow query log + `performance_schema` for truth over guesswork.
+12. **Replication awareness in app code:** read replicas lag - read-your-own-writes goes to the primary; `AUTO_INCREMENT` gaps are normal (don't build logic on contiguity).

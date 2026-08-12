@@ -1,0 +1,13 @@
+# Flask
+
+1. **Application factory + blueprints from day one.** `create_app()` pattern (testability, multiple configs) with blueprints per domain - a single 2000-line `app.py` with a global `app` is the canonical Flask failure. Extensions initialized module-level, bound in the factory (`db.init_app(app)`).
+2. **Config classes per environment, secrets from env:** `app.config.from_object`/`from_prefixed_env`; `SECRET_KEY` is required, random, and never committed (it signs the session cookies).
+3. **Understand the two contexts:** request-scoped `request`/`session`/`g`, app-scoped `current_app`. Context-bound objects can't be touched from background threads or module import time - that `RuntimeError: working outside of application context` means restructure (pass values in / `app.app_context()`), not sprinkle contexts until it stops.
+4. **`g` is per-request scratch space** (current user, request-scoped connections via `teardown_appcontext` cleanup) - never module-level globals for per-request state; workers share them across requests.
+5. **Flask's session is a signed client-side cookie:** readable by the user (don't store anything sensitive), size-limited, and only tamper-proof - not encrypted. Server-side sessions or a real auth extension (flask-login/JWT) for anything serious.
+6. **Validate input with a real layer** - Flask gives you `request.args`/`request.get_json()` raw. Marshmallow/pydantic schemas (or WTForms for HTML forms, which also brings CSRF via Flask-WTF) before logic. `request.get_json(silent=True)` returns None - check it.
+7. **Errors: `abort(4xx)` for request errors, `@app.errorhandler` for consistent JSON/HTML error responses** - including a 500 handler that logs the exception and returns a generic body. Don't let debug mode or tracebacks anywhere near production (`FLASK_DEBUG` off; the debugger is RCE).
+8. **Routes thin, logic in plain modules;** return `(body, status)` tuples or `jsonify` - with correct codes (201 on create, 404 via `get_or_404` scoped to the owner - the unscoped lookup is an IDOR here too).
+9. **SQLAlchemy session lifecycle handled by Flask-SQLAlchemy** (or explicit scoped-session teardown); commit at the end of a logical unit, rollback on exception (teardown hooks), never share sessions across requests. The N+1 rules apply (see orms.md).
+10. **Long work leaves the request:** Celery/RQ with the factory pattern (task app context), IDs not objects as arguments. WSGI server (gunicorn/uwsgi) in production - never `app.run()`.
+11. **Tests: `app.test_client()` from a factory-built app with test config,** fixtures creating/dropping schema per test session, and context managers (`with client:`) when asserting on session/g.

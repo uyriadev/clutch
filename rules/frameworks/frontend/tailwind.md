@@ -1,0 +1,12 @@
+# Tailwind CSS
+
+1. **Check the major version before writing config or classes.** v4 (CSS-first `@theme` config, `@import "tailwindcss"`, no `tailwind.config.js` by default) vs v3 (JS config, `@tailwind` directives) differ fundamentally; several utilities were renamed/removed (`shadow-sm`->`shadow-xs` era changes). Match the installed version.
+2. **Use the design scale; treat arbitrary values as escape hatches.** `p-4`, `text-lg`, `gap-2` keep the UI on a consistent grid - `p-[13px]` and `text-[#3b82f6]` scattered around means the design system has failed. Recurring arbitrary values belong in the theme.
+3. **Duplication is handled with components, not `@apply`.** Repeated class strings -> extract a React/Vue/Svelte component or a template partial. `@apply` sparingly, for small primitives in genuinely shared CSS (form resets, prose tweaks) - a stylesheet full of `@apply` is hand-rolled CSS with extra steps.
+4. **Never construct class names dynamically by string-building.** `bg-${color}-500` is invisible to the scanner and gets purged. Map to complete literal strings: `{ red: 'bg-red-500', blue: 'bg-blue-500' }[color]`.
+5. **Order classes consistently** (the official Prettier plugin does it) - layout -> spacing -> typography -> color -> states is readable; alphabet soup isn't.
+6. **Mobile-first responsive:** unprefixed = all sizes, `md:`/`lg:` = that breakpoint up. Don't write `sm:` intending "small screens only" - that's the base style's job.
+7. **State and structure variants over JS class-toggling** where CSS can see the state: `hover:`, `focus-visible:`, `disabled:`, `group-hover:`, `peer-checked:`, `data-[state=open]:` (pairs with Radix/headless libraries), `aria-expanded:` variants.
+8. **Dark mode through the configured strategy** (`dark:` with class/media per project config) on the token level - if every component hand-picks `dark:` colors, define semantic theme tokens instead.
+9. **Merge conflicting classes properly in component APIs:** later class strings don't reliably override earlier ones (specificity is flat, order in the stylesheet wins). Use `tailwind-merge` (`cn()` helper) when components accept `className` overrides.
+10. **Don't fight the utility model:** no `!important` prefixes (`!p-4`) to win specificity wars - find the conflict; no inline `style=` for things utilities cover; but equally, genuinely complex one-off CSS (keyframe choreography, exotic selectors) may just be CSS - put it in a stylesheet without guilt.

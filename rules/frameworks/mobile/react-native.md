@@ -1,0 +1,14 @@
+# React Native
+
+1. **React rules apply first** (see react.md) - state design, effects discipline, keys, memoization-by-measurement. RN adds the bridge, the platforms, and lists.
+2. **Know the project's architecture before writing:** Expo (managed/dev-client, SDK version, expo-router) vs bare RN, New Architecture (Fabric/TurboModules) vs old, Hermes engine - these decide which libraries and APIs are usable. Check `package.json`/`app.json` first; never add a native module to a managed Expo app without confirming compatibility.
+3. **`FlatList`/`SectionList` (or the project's FlashList) for every scrollable collection - never `ScrollView` + `.map()`** beyond a handful of fixed items. Provide `keyExtractor`, stable renderItem (memoized component), `getItemLayout` when row height is fixed.
+4. **The JS thread is the frame budget:** heavy computation, huge JSON parses, and synchronous storage on the JS thread drop frames everywhere. Animations via `react-native-reanimated` (worklets on the UI thread) or `useNativeDriver: true` - never `setState`-per-frame animation.
+5. **Style with `StyleSheet.create` (or the project's styled system) outside render;** flexbox is the layout language (no CSS grid/floats); use density-independent units and test both platforms - shadows, fonts, and status bars differ (`Platform.select`, `.ios.tsx`/`.android.tsx` for real divergence).
+6. **Safe areas and keyboards are table stakes:** `SafeAreaView`/safe-area-context on every screen, `KeyboardAvoidingView` (platform-varied `behavior`) on forms, dismissal handling - an input hidden behind the keyboard is a shipped bug.
+7. **Navigation via the house library (React Navigation or expo-router) idiomatically:** typed param lists, params carry IDs not objects, screen options at the navigator, deep links configured - don't hand-roll stack state.
+8. **Network and images cost more here:** every fetch handles offline/failure states visibly (NetInfo, retries via the query library - React Query is the norm); images sized explicitly, cached (expo-image/FastImage per project), and compressed at the source.
+9. **Persistence: AsyncStorage is small, string-only, unencrypted** - MMKV where adopted for speed; **secrets/tokens in Keychain/Keystore** (expo-secure-store, react-native-keychain), never AsyncStorage.
+10. **Permissions flow through the platform ritual:** declare (Info.plist/AndroidManifest), request at point of use with rationale, handle denial gracefully - crashing or dead-ending on "denied" fails review, human and automated.
+11. **Every native-module addition is a build decision:** iOS pods + Android gradle, rebuild dev clients, config plugins in Expo - note it in the PR; JS-only until proven otherwise.
+12. **Test where it pays:** logic in plain TS (trivially testable), components with React Native Testing Library, flows with Maestro/Detox if the project has them - and always on both platforms before calling UI work done.

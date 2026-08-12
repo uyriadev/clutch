@@ -1,0 +1,15 @@
+# SwiftUI
+
+1. **Swift rules apply first** (see swift.md) - optionals, value types, structured concurrency, `@MainActor`. SwiftUI adds declarative state flow and view identity.
+2. **Check the deployment target and observation model first:** iOS 17+ projects use `@Observable` (+ `@State`/`@Bindable`); older targets use `ObservableObject`/`@Published`/`@StateObject`/`@ObservedObject`. These don't mix casually - write to what the project uses.
+3. **Property wrappers by ownership:** `@State` for view-owned value state, `@StateObject` (legacy) for view-owned reference models - **`@ObservedObject`/plain passing for models owned elsewhere; getting this wrong recreates your model on every parent rebuild.** `@Binding` for write access down the tree; `@Environment` for ambient context.
+4. **Views are cheap value descriptions - `body` must be pure and fast:** no side effects, no network, no expensive computation in `body` (it runs constantly). Derive with computed properties; kick effects through `.task`/`.onChange`/user actions.
+5. **State flows down, actions flow up.** Single source of truth per piece of state; don't duplicate a model into local `@State` and sync - bind to it. Logic lives in models/stores, not stacked in view modifiers.
+6. **`.task` over `.onAppear` + `Task {}`** for async work tied to view lifetime - it auto-cancels on disappear and re-runs with `.task(id:)` when inputs change. Respect cancellation in the work it starts.
+7. **Identity drives animation and state retention:** stable `Identifiable` ids in `ForEach` (never array indices for mutable lists); explicit `.id()` only when you *mean* to reset a view's state. Mysterious state loss/wrong-row bugs are identity bugs.
+8. **Structure with small subviews:** extract child views (structs, not 300-line bodies) - rebuild scope and diffing both improve. `@ViewBuilder` helpers for slots; prefer composition to boolean-flag mega-views.
+9. **Layout with the system:** VStack/HStack/ZStack/Grid + frames/alignment; `GeometryReader` sparingly and never as the outermost reflex (it greedily takes all space); safe areas respected; Dynamic Type honored - hardcoded font sizes and fixed heights break accessibility review.
+10. **Navigation modern-idiomatically:** `NavigationStack` + typed `navigationDestination`/path (not deprecated `NavigationView`/links-with-isActive) on iOS 16+; sheets/alerts driven by optional-item state, not booleans-plus-globals.
+11. **Lists and images:** `List`/`LazyVStack` for long content (plain VStack renders everything), `AsyncImage` or the project's cached loader with placeholders and failure states.
+12. **Accessibility is part of every view:** labels on image-only buttons, `accessibilityElement(children:)` grouping, traits, and a VoiceOver sanity pass - SwiftUI gives good defaults; don't destroy them with decorative text and unlabeled taps.
+13. **Previews and tests:** keep `#Preview`s compiling with representative states (they're the fastest verification loop); logic in testable models - view structs stay thin enough that unit tests target the model layer.

@@ -1,0 +1,14 @@
+# ASP.NET Core
+
+1. **C# async rules apply doubly here** (see csharp.md): async all the way, no `.Result`/`.Wait()`, `CancellationToken` accepted in endpoints and passed to EF/HTTP calls - ASP.NET hands you the request-aborted token; use it.
+2. **Know the project's API style - minimal APIs vs controllers - and match it.** Either way: thin handlers, typed request/response DTOs (records), business logic in injected services. Entities never serialize out directly.
+3. **DI lifetimes are correctness, not configuration trivia:** `DbContext` is scoped; a singleton capturing a scoped service is a captive dependency (the container throws in dev - don't disable that check, fix the design; `IServiceScopeFactory` inside singletons/background services). `HttpClient` via `IHttpClientFactory`, never `new HttpClient()` per request (socket exhaustion).
+4. **Validation at the boundary:** DataAnnotations/FluentValidation on DTOs, `ModelState` respected (or `[ApiController]`'s automatic 400), manual validation in minimal APIs via endpoint filters. Never bind directly to entities (over-posting).
+5. **Error handling centralized:** exception-handler middleware / `IExceptionHandler` producing ProblemDetails; correct status codes (`TypedResults` in minimal APIs for compile-checked responses); `UseDeveloperExceptionPage` never in production.
+6. **Middleware order in `Program.cs` is the program:** HTTPS redirection -> static files -> routing -> CORS -> authentication -> authorization -> endpoints. AuthN before AuthZ; CORS policy as explicit allowlist.
+7. **Authorization is policies + resource checks:** `[Authorize]` with policy/roles at minimum, `IAuthorizationService` for per-resource ownership (a valid token still isn't permission to touch row 42). Fail closed.
+8. **EF Core discipline:** `AsNoTracking` for read-only queries, `Include`/projection (`Select` to DTO) against N+1, migrations reviewed and applied via pipeline (not `EnsureCreated` in prod), no lazy-loading proxies without a stated reason, pooled DbContext where perf demands.
+9. **Configuration via the options pattern:** `IOptions<T>` bound from configuration sections with `ValidateDataAnnotations().ValidateOnStart()` - crash at boot, not first use. Secrets: user-secrets in dev, env/key vault in prod, never appsettings.json in git.
+10. **Background work in `BackgroundService`/hosted services with scoped-service discipline and graceful `StoppingToken` handling;** real job queues for real workloads. Response-path slow work returns 202 + status.
+11. **Logging via `ILogger<T>` with structured message templates** (`_logger.LogInformation("Order {OrderId} shipped", id)` - never string interpolation into the template); health checks (`MapHealthChecks`) for orchestrators.
+12. **Tests: `WebApplicationFactory` for integration (in-memory server, real pipeline), Testcontainers for the DB (the EF in-memory provider lies about relational behavior), plain xUnit + mocks for services.**

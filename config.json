@@ -1,0 +1,9 @@
+{
+  "project": "clutch",
+  "role": "source",
+  "global_dir": null,
+  "max_diff_chars": 60000,
+  "operating_mode": true,
+  "stack": [],
+  "comment": "role: 'source' owns the libraries (guides/templates/rules/prompts) and syncs them two-way; 'consumer' (default) reads them from the global store and never copies the markdown in. project: null = derive from git remote/folder. global_dir: null = %USERPROFILE%\\.clutch. stack: rule-file names for the bundle (e.g. [\"python\",\"fastapi\"]); the ai/ set is always included."
+}

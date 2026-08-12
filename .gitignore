@@ -1,0 +1,17 @@
+# machine-local, not for the repo
+__pycache__/
+state.json
+grading/
+RULES.md
+AI.md
+reports/
+checkpoint/current.md
+# rendered from the mermaid blocks in ARCHITECTURE.md; GitHub renders those natively
+ARCHITECTURE-*.svg
+ARCHITECTURE-*.png
+
+# local, private, and never distributed
+prompt.md
+
+# local session telemetry from another tool, not project source
+.aihelper/

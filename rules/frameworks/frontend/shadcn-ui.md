@@ -1,0 +1,12 @@
+# shadcn/ui
+
+1. **It's not a dependency - it's vendored source.** Components are copied into `components/ui/` and are yours to edit. There is no package to update; "upgrading" means re-running the CLI diff and merging. Understand this before treating it like a library.
+2. **Add components with the CLI** (`npx shadcn@latest add button`), not by hand-copying from the docs site - the CLI resolves the project's `components.json` (paths, style, RSC setting, CSS variables) and pulls the right variant.
+3. **Edit `components/ui/` deliberately, and keep edits minimal.** These files are the design-system primitives: broad restyling belongs in the theme tokens (CSS variables), behavioral variants belong in the `cva` variant maps - not scattered overrides at call sites. App-specific compositions live outside `components/ui/`, wrapping the primitives.
+4. **Theme via the CSS variables** (`--primary`, `--radius`, etc. in globals.css) - that's the sanctioned theming layer, and it's what keeps future component additions visually consistent. Don't hardcode palette colors inside component files.
+5. **Respect the underlying Radix/Base primitives:** accessibility (focus traps, aria wiring, keyboard nav) comes from them - don't strip the primitive out of a component or bypass its composition parts (`asChild`, `Trigger`/`Content` pairing) while keeping the styling shell.
+6. **Extend with `cva` variants, not prop-branched className soup:** new button style = new entry in the variants map. Use the `cn()` helper (clsx + tailwind-merge) for every className merge - plain template literals lose the override war.
+7. **Forms follow the documented pattern:** `Form` + react-hook-form + zod resolver, with `FormField`/`FormItem`/`FormMessage` wiring labels, descriptions, and error announcement. Don't hand-roll form state around the styled inputs and lose the a11y plumbing.
+8. **Check `components.json` before generating anything** - style variant, base color, RSC flag, aliases, Tailwind version - and check which registry era the project is on (Radix-based vs newer registry/Base-UI variants); generated code must match the installed primitives, not memory.
+9. **Server/client boundary in Next.js:** shadcn interactive components are client components - compose them under server components normally, but don't mark whole pages `'use client'` just to use a dialog.
+10. **Don't fork the aesthetic per feature:** one team-wide look lives in the primitives + tokens. If a page needs a "special" button, that's a design decision to surface, not a one-off inline restyle.
